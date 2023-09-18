@@ -2,6 +2,8 @@ package main
 
 import (
     "fmt"
+    "html/template"
+    "log"
     "net/http"
     "strconv"
 )
@@ -18,7 +20,34 @@ func home(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    w.Write([]byte("Hello from Snippetbox"))
+    // intialize a slice containing the paths to the template files
+    // IMPORTANT. the base template must be *first* file in the slice
+    files := []string{
+        "./ui/html/base.tmpl",
+        "./ui/html/partials/nav.tmpl",
+        "./ui/html/pages/home.tmpl",
+    }
+
+    // use the template.ParseFIles() func to read the template file
+    // if there is an error, we log the detailed error message and
+    // use http.Error() func to send a generic 500 Interal Server error
+    // use the http.StatusInternalServerError instead of the integer 500 directly.
+    ts, err := template.ParseFiles(files...)
+    if err != nil {
+        log.Print(err.Error())
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        return
+    }
+
+    // then use the Execute() method on the template set to write the
+    // template conent as the response body. The last param to Execute()
+    // represents any dynamic data that we want to pass in, which for now
+    // we leave as nil
+    err = ts.ExecuteTemplate(w, "base", nil)
+    if err != nil {
+        log.Print(err.Error())
+        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+    }
 }
 
 // Add a snippetView handler function
