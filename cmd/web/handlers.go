@@ -11,11 +11,11 @@ import (
 // "Hello from Snippetbox" as the response body.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
     // check if request URL path matches "/".
-    // If not then use http.NotFound() to send a 404
+    // If not then use notFound() helper to send a 404
     // must return from the handler or else the handler will continue 
     // executing all code below
     if r.URL.Path != "/" {
-        http.NotFound(w, r)
+        app.notFound(w)
         return
     }
 
@@ -29,14 +29,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
     // use the template.ParseFIles() func to read the template file
     // if there is an error, we log the detailed error message and
-    // use http.Error() func to send a generic 500 Interal Server error
-    // use the http.StatusInternalServerError instead of the integer 500 directly.
+    // use the serverError() helper
     ts, err := template.ParseFiles(files...)
     if err != nil {
         // because home handler is now a method against the application
         // struct it can access its fields, included the structured logger.
-        app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
-        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        app.serverError(w, r, err)
         return
     }
 
@@ -46,8 +44,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
     // we leave as nil
     err = ts.ExecuteTemplate(w, "base", nil)
     if err != nil {
-        app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
-        http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+        app.serverError(w, r, err)
     }
 }
 
@@ -58,7 +55,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
     // return 404 error
     id, err := strconv.Atoi(r.URL.Query().Get("id"))
     if err != nil || id < 1 {
-        http.NotFound(w, r)
+        app.notFound(w)
         return
     }
 
@@ -77,8 +74,8 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
         // subsequent code is not executed.
         w.Header().Set("Allow", http.MethodPost)
 
-        // use the http.Error() function to send a status code and string body
-        http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+        // use the clientError() helper
+        app.clientError(w, http.StatusMethodNotAllowed)
         return
     }
 
