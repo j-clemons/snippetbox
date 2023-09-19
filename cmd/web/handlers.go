@@ -3,14 +3,13 @@ package main
 import (
     "fmt"
     "html/template"
-    "log"
     "net/http"
     "strconv"
 )
 
 // Define a home handler function which write a byte slice containing
 // "Hello from Snippetbox" as the response body.
-func home(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
     // check if request URL path matches "/".
     // If not then use http.NotFound() to send a 404
     // must return from the handler or else the handler will continue 
@@ -34,7 +33,9 @@ func home(w http.ResponseWriter, r *http.Request) {
     // use the http.StatusInternalServerError instead of the integer 500 directly.
     ts, err := template.ParseFiles(files...)
     if err != nil {
-        log.Print(err.Error())
+        // because home handler is now a method against the application
+        // struct it can access its fields, included the structured logger.
+        app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return
     }
@@ -45,13 +46,13 @@ func home(w http.ResponseWriter, r *http.Request) {
     // we leave as nil
     err = ts.ExecuteTemplate(w, "base", nil)
     if err != nil {
-        log.Print(err.Error())
+        app.logger.Error(err.Error(), "method", r.Method, "uri", r.URL.RequestURI())
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
     }
 }
 
 // Add a snippetView handler function
-func snippetView(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
     // extract the value of the id parameter from query string
     // and attempt to convert to int. If not int or less than 1
     // return 404 error
@@ -67,7 +68,7 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 // Add a snippetCreate handler function
-func snippetCreate(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
     // use r.Method to check whether the request is using POST or not.
     if r.Method != http.MethodPost {
         // if it's not, use the w.WriteHeader() method to send a 405 status code
