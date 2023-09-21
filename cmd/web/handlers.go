@@ -1,10 +1,13 @@
 package main
 
 import (
+    "errors"
     "fmt"
     "html/template"
     "net/http"
     "strconv"
+
+    "github.com/j-clemons/snippetbox/internal/models"
 )
 
 // Define a home handler function which write a byte slice containing
@@ -58,10 +61,21 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
         app.notFound(w)
         return
     }
+    
+    // Use the SnippetModel's Get() method to retrieve the data for a specific
+    // record based on its ID. If no matching record, then return 404
+    snippet, err := app.snippets.Get(id)
+    if err != nil {
+        if errors.Is(err, models.ErrNoRecord) {
+            app.notFound(w)
+        } else {
+            app.serverError(w, r, err)
+        }
+        return
+    }
 
-    // use the fmt.Fprintf() function to interpolate the id with our
-    // response and write it to the http.ResponseWriter
-    fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+    // write the snippet data as a plain-text HTTP response body
+    fmt.Fprintf(w, "%+v", snippet)
 }
 
 // Add a snippetCreate handler function
