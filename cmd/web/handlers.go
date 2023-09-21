@@ -3,7 +3,6 @@ package main
 import (
     "errors"
     "fmt"
-    "html/template"
     "net/http"
     "strconv"
 
@@ -28,37 +27,10 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // intialize a slice containing the paths to the template files
-    // IMPORTANT. the base template must be *first* file in the slice
-    files := []string{
-        "./ui/html/base.tmpl",
-        "./ui/html/partials/nav.tmpl",
-        "./ui/html/pages/home.tmpl",
-    }
-
-    // use the template.ParseFIles() func to read the template file
-    // if there is an error, we log the detailed error message and
-    // use the serverError() helper
-    ts, err := template.ParseFiles(files...)
-    if err != nil {
-        // because home handler is now a method against the application
-        // struct it can access its fields, included the structured logger.
-        app.serverError(w, r, err)
-        return
-    }
-
-    data := templateData{
+    // use the new render helper
+    app.render(w, r, http.StatusOK, "home.tmpl", templateData{
         Snippets: snippets,
-    }
-
-    // then use the Execute() method on the template set to write the
-    // template conent as the response body. The last param to Execute()
-    // represents any dynamic data that we want to pass in, which for now
-    // we leave as nil
-    err = ts.ExecuteTemplate(w, "base", data)
-    if err != nil {
-        app.serverError(w, r, err)
-    }
+    })
 }
 
 // Add a snippetView handler function
@@ -84,31 +56,9 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // initialize a slice containing the paths to the view.tmpl file,
-    // plus the base layout and navigation partial
-    files := []string{
-        "./ui/html/base.tmpl",
-        "./ui/html/partials/nav.tmpl",
-        "./ui/html/pages/view.tmpl",
-    }
-
-    // parse the template files
-    ts, err := template.ParseFiles(files...)
-    if err != nil {
-        app.serverError(w, r, err)
-        return
-    }
-
-    // create instance of a templateData struct holding the snippet data
-    data := templateData{
+    app.render(w, r, http.StatusOK, "view.tmpl", templateData{
         Snippet: snippet,
-    }
-
-    // execute templates
-    err = ts.ExecuteTemplate(w, "base", data)
-    if err != nil {
-        app.serverError(w, r, err)
-    }
+    })
 }
 
 // Add a snippetCreate handler function
