@@ -72,6 +72,42 @@ func (m *SnippetModel) Get(id int) (Snippet, error) {
 }
 
 // return the 10 most recent snippets 
-// func (m *SnippetModel) Latest() ([]Snippet, error) {
-//     return nil, nil
-// }
+func (m *SnippetModel) Latest() ([]Snippet, error) {
+    stmt := `SELECT id, title, content, created, expires FROM snippets
+    WHERE expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10`
+
+    rows, err := m.DB.Query(stmt)
+    if err != nil {
+        return nil, err
+    }
+
+    // defer rows.Close() to ensrue the sql.Rows resultset is always properly
+    // closed before the Latest() method returns.
+    // This should ALWAYS come *after* you check for an error from the Query()
+    // otherwise you will get a panic if trying to close a nil resultset
+    defer rows.Close()
+
+    // initialize an empty slice of Snippet structs
+    var snippets []Snippet
+
+    for rows.Next() {
+        var s Snippet
+
+        err := rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+        if err != nil {
+            return nil, err
+        }
+
+        snippets = append(snippets, s)
+    }
+
+    // when loop has finished, we call rows.Err() to retrieve any error that 
+    // was encountered during the iteration. It is important to call this 
+    // DO NOT ASSUME that a successful iteration was completed over the whole resultset
+    if err = rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return snippets, nil
+
+}
