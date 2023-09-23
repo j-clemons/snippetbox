@@ -27,10 +27,13 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // call the newTemplateData() helper to get the templateData struct
+    // containing the 'default' data 
+    data := app.newTemplateData(r)
+    data.Snippets = snippets
+
     // use the new render helper
-    app.render(w, r, http.StatusOK, "home.tmpl", templateData{
-        Snippets: snippets,
-    })
+    app.render(w, r, http.StatusOK, "home.tmpl", data)
 }
 
 // Add a snippetView handler function
@@ -56,9 +59,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    app.render(w, r, http.StatusOK, "view.tmpl", templateData{
-        Snippet: snippet,
-    })
+    data := app.newTemplateData(r)
+    data.Snippet = snippet
+
+    app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
 
 // Add a snippetCreate handler function
