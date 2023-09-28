@@ -64,7 +64,9 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-    w.Write([]byte("display the form for creating a new snippet..."))
+    data := app.newTemplateData(r)
+
+    app.render(w, r, http.StatusOK, "create.tmpl", data)
 }
 
 // Add a snippetCreate handler function
@@ -72,10 +74,25 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
     // no longer need to check if request is POST because this is 
     // done automatically by httprouter
 
-    // creating dummy data
-    title := "0 snail"
-    content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-    expires := 7
+    err := r.ParseForm()
+    if err != nil {
+        app.clientError(w, http.StatusBadRequest)
+        return
+    }
+
+    // use the r.PostForm.Get() method to retrieve the title and
+    // content from the r.PostForm map
+    title := r.PostForm.Get("title")
+    content := r.PostForm.Get("content")
+
+    // the r.PostForm.Get() method always returns the form data a *string*
+    // except we're expecting the expires value to be a number
+    // so need to manually convert the form data to an integer
+    expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+    if err != nil {
+        app.clientError(w, http.StatusBadRequest)
+        return
+    }
 
     // pass the data to the SnippetModel.Insert() method
     id, err := app.snippets.Insert(title, content, expires)
