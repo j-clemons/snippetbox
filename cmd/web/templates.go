@@ -14,6 +14,7 @@ type templateData struct {
     CurrentYear int
     Snippet     models.Snippet
     Snippets    []models.Snippet
+    Form        any
 }
 
 // create a function that returns a formatted time.Time object

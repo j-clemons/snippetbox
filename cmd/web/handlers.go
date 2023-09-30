@@ -5,11 +5,20 @@ import (
     "fmt"
     "net/http"
     "strconv"
+    "strings"
+    "unicode/utf8"
 
     "github.com/j-clemons/snippetbox/internal/models"
 
     "github.com/julienschmidt/httprouter"
 )
+
+type snippetCreateForm struct {
+    Title       string
+    Content     string
+    Expires     int
+    FieldErrors map[string]string
+}
 
 // Define a home handler function which write a byte slice containing
 // "Hello from Snippetbox" as the response body.
@@ -66,6 +75,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
     data := app.newTemplateData(r)
 
+    data.Form = snippetCreateForm{
+        Expires: 365,
+    }
+
     app.render(w, r, http.StatusOK, "create.tmpl", data)
 }
 
@@ -80,11 +93,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
         return
     }
 
-    // use the r.PostForm.Get() method to retrieve the title and
-    // content from the r.PostForm map
-    title := r.PostForm.Get("title")
-    content := r.PostForm.Get("content")
-
     // the r.PostForm.Get() method always returns the form data a *string*
     // except we're expecting the expires value to be a number
     // so need to manually convert the form data to an integer
@@ -94,8 +102,41 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
         return
     }
 
+    form := snippetCreateForm{
+        Title:       r.PostForm.Get("title"),
+        Content:     r.PostForm.Get("content"),
+        Expires:     expires,
+        FieldErrors: map[string]string{},
+    }
+
+
+    // validate the title is not blank and is not more than 100 characters
+    if strings.TrimSpace(form.Title) == "" {
+        form.FieldErrors["title"] = "This field cannot be blank"
+    } else if utf8.RuneCountInString(form.Title) > 100 {
+        form.FieldErrors["title"] = "This field cannot be more than 100 characters"
+    }
+
+    // Check that the Content value isn't blank
+    if strings.TrimSpace(form.Content) == "" {
+        form.FieldErrors["content"] = "This field cannot be blank"
+    }
+
+    // check the expires value matches one of the permitted values
+    if form.Expires != 1 && form.Expires != 7 && form.Expires != 365 {
+        form.FieldErrors["expires"] = "This field must equal 1, 7 or 365"
+    }
+
+    // if there are any errors, dump them in a plain text HTTP response
+    if len(form.FieldErrors) > 0 {
+        data := app.newTemplateData(r)
+        data.Form = form
+        app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
+        return
+    }
+
     // pass the data to the SnippetModel.Insert() method
-    id, err := app.snippets.Insert(title, content, expires)
+    id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
     if err != nil {
         app.serverError(w, r, err)
         return
