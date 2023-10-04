@@ -13,10 +13,10 @@ import (
 )
 
 type snippetCreateForm struct {
-    Title               string
-    Content             string
-    Expires             int
-    validator.Validator
+    Title               string `form:"title"`
+    Content             string `form:"content"`
+    Expires             int    `form:"expires"`
+    validator.Validator `from:"-"`
 }
 
 // Define a home handler function which write a byte slice containing
@@ -83,28 +83,13 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 // Add a snippetCreate handler function
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-    // no longer need to check if request is POST because this is 
-    // done automatically by httprouter
+    // declare a new empty instace of the snippetCreateForm struct
+    var form snippetCreateForm
 
-    err := r.ParseForm()
+    err := app.decodePostForm(r, &form)
     if err != nil {
         app.clientError(w, http.StatusBadRequest)
         return
-    }
-
-    // the r.PostForm.Get() method always returns the form data a *string*
-    // except we're expecting the expires value to be a number
-    // so need to manually convert the form data to an integer
-    expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-    if err != nil {
-        app.clientError(w, http.StatusBadRequest)
-        return
-    }
-
-    form := snippetCreateForm{
-        Title:       r.PostForm.Get("title"),
-        Content:     r.PostForm.Get("content"),
-        Expires:     expires,
     }
 
     // because the Validator struct is embedded in the snippetCreateForm

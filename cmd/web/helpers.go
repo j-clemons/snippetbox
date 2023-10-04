@@ -2,9 +2,12 @@ package main
 
 import (
     "bytes"
+    "errors"
     "fmt"
     "net/http"
     "time"
+
+    "github.com/go-playground/form/v4"
 )
 
 // the serverError helper writes a log entry at Error level
@@ -66,4 +69,26 @@ func (app *application) newTemplateData(r *http.Request) templateData {
     return templateData{
         CurrentYear: time.Now().Year(),
     }
+}
+
+// create a new decodePostForm() helper method. The second param here
+// dst is the target destination that we want to decode the form data into
+func (app *application) decodePostForm(r *http.Request, dst any) error {
+    err := r.ParseForm()
+    if err != nil {
+        return err
+    }
+
+    err = app.formDecoder.Decode(dst, r.PostForm)
+    if err != nil {
+        var invalidDecoderError *form.InvalidDecoderError
+        
+        if errors.As(err, &invalidDecoderError) {
+            panic(err)
+        }
+
+        return err
+    }
+
+    return nil
 }
