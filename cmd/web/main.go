@@ -77,16 +77,23 @@ func main() {
         sessionManager: sessionManager,
     }
 
+    srv := &http.Server{
+        Addr:     *addr,
+        Handler:  app.routes(),
+        ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+    }
+
     // Print a log message to say that the server is starting.
-    logger.Info("starting server", "addr", *addr)
+    logger.Info("starting server", "addr", srv.Addr)
 
     // Use the http.ListenAndServe() function to start a new web server.
     // We pass in two params: the TCP network address to list to no (ex. :4000)
     // and the servemux we just created. If http.ListenAndServe() returns an 
     // error we use the log.Fatal() to log the error and exit.
     // Note any error returned by http.ListenAndServe() is always non-nil.
-    err = http.ListenAndServe(*addr, app.routes())
+    // err = http.ListenAndServe(*addr, app.routes())
 
+    err = srv.ListenAndServe()
     logger.Error(err.Error())
     os.Exit(1)
 }
