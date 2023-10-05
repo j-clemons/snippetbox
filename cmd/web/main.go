@@ -7,19 +7,23 @@ import (
     "log/slog"
     "net/http"
     "os"
+    "time"
 
     "github.com/j-clemons/snippetbox/internal/models"
 
+    "github.com/alexedwards/scs/mysqlstore"
+    "github.com/alexedwards/scs/v2"
     "github.com/go-playground/form/v4"
     _ "github.com/go-sql-driver/mysql"
 )
 
 // define an application struct to hold the app-wide dependencies
 type application struct {
-    logger        *slog.Logger
-    snippets      *models.SnippetModel
-    templateCache map[string]*template.Template
-    formDecoder   *form.Decoder
+    logger         *slog.Logger
+    snippets       *models.SnippetModel
+    templateCache  map[string]*template.Template
+    formDecoder    *form.Decoder
+    sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -56,13 +60,21 @@ func main() {
 
     formDecoder := form.NewDecoder()
 
+    // use the scs.New() to initialize a new session manager.
+    // configure it to use mysql DB as the session store
+    // set session lifetime of 12 hours
+    sessionManager := scs.New()
+    sessionManager.Store = mysqlstore.New(db)
+    sessionManager.Lifetime = 12 * time.Hour
+
     // initialize a new instance of the application struct
     // containing the dependencies
     app := &application{
-        logger:        logger,
-        snippets:      &models.SnippetModel{DB: db},
-        templateCache: templateCache,
-        formDecoder:   formDecoder,
+        logger:         logger,
+        snippets:       &models.SnippetModel{DB: db},
+        templateCache:  templateCache,
+        formDecoder:    formDecoder,
+        sessionManager: sessionManager,
     }
 
     // Print a log message to say that the server is starting.
