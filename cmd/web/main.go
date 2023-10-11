@@ -22,6 +22,7 @@ import (
 type application struct {
     logger         *slog.Logger
     snippets       *models.SnippetModel
+    users          *models.UserModel
     templateCache  map[string]*template.Template
     formDecoder    *form.Decoder
     sessionManager *scs.SessionManager
@@ -74,6 +75,7 @@ func main() {
     app := &application{
         logger:         logger,
         snippets:       &models.SnippetModel{DB: db},
+        users:          &models.UserModel{DB: db},
         templateCache:  templateCache,
         formDecoder:    formDecoder,
         sessionManager: sessionManager,
@@ -101,7 +103,7 @@ func main() {
     // Use the http.ListenAndServe() function to start a new web server.
     // We pass in two params: the TCP network address to list to no (ex. :4000)
     // and the servemux we just created. If http.ListenAndServe() returns an 
-    // error we use the log.Fatal() to log the error and exit.
+    // error we use the log.Fatal() to log the error and exit.main
     // Note any error returned by http.ListenAndServe() is always non-nil.
     // err = http.ListenAndServe(*addr, app.routes())
 
