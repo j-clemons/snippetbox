@@ -17,6 +17,7 @@ type templateData struct {
     Form            any
     Flash           string
     IsAuthenticated bool
+    CSRFToken       string
 }
 
 // create a function that returns a formatted time.Time object
