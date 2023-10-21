@@ -3,6 +3,8 @@ package main
 import (
     "net/http"
 
+    "github.com/j-clemons/snippetbox/ui"
+
     "github.com/julienschmidt/httprouter"
     "github.com/justinas/alice"
 )
@@ -19,8 +21,8 @@ func (app *application) routes() http.Handler {
     // create a file server which serves files out of the "./ui/static"
     // dir. Note that the path given to the http.Dir func is relative
     // to the project directory root.
-    fileServer := http.FileServer(http.Dir("./ui/static/"))
-    router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+    fileServer := http.FileServer(http.FS(ui.Files))
+    router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
     // create a new middleware chain containing middleware specific
     // to our dynamic application routes. 
