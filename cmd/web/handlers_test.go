@@ -83,7 +83,7 @@ func TestUserSignup(t *testing.T) {
     ts := newTestServer(t, app.routes())
     defer ts.Close()
 
-    _, _, body := ts.get(t, "/user/signup")
+    _, _, body := ts.get(t, "/user/signup/")
     validCSRFToken := extractCSRFToken(t, body)
 
     const (
@@ -182,7 +182,7 @@ func TestUserSignup(t *testing.T) {
             form.Add("password", tt.userPassword)
             form.Add("csrf_token", tt.csrfToken)
 
-            code, _, body := ts.postForm(t, "/user/signup", form)
+            code, _, body := ts.postForm(t, "/user/signup/", form)
 
             assert.Equal(t, code, tt.wantCode)
 

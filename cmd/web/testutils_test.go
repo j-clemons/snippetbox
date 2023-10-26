@@ -19,11 +19,11 @@ import (
     "github.com/go-playground/form/v4"
 )
 
-var csrfTokenRX = regexp.MustCompile(`<input type="hidden" name="csrf_token" value="(.+)">`)
+var csrfTokenRX = regexp.MustCompile(`<input type='hidden' name='csrf_token' value='(.+)'>`)
 
 func extractCSRFToken(t *testing.T, body string) string {
     matches := csrfTokenRX.FindStringSubmatch(body)
-    if len(matches) < 2 {
+    if len(matches) < 1 {
         t.Fatal("no csrf token found in body")
     }
 
